@@ -30,11 +30,13 @@ export function createApp(env=process.env,request=fetch){
       let data;try{data=JSON.parse(raw);}catch{return json(400,{error:'Richiesta non valida'});}
       const messages=data.messages;
       if(!Array.isArray(messages)||!messages.length||messages.length>30||messages.some(m=>!m||!['user','assistant'].includes(m.role)||typeof m.content!=='string'||!m.content.trim()||m.content.length>8000)||messages.at(-1).role!=='user')return json(400,{error:'Messaggi non validi o troppo lunghi.'});
-      const upstream=await request('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENROUTER_API_KEY,'Content-Type':'application/json','X-Title':'Franco iPhone'},body:JSON.stringify({model:env.FRANCO_OPENROUTER_MODEL||'openrouter/auto',max_tokens:1600,messages:[{role:'system',content:'Sei Franco, assistente personale di lingua italiana. Rispondi in modo utile e chiaro. Questa versione iPhone offre conversazione e lettura vocale. Non hai accesso al PC, ai file, a strumenti, a notizie in tempo reale o alla domotica. Non dichiarare di aver eseguito azioni.'},...messages]}),signal:AbortSignal.timeout(60000)});
+      const upstream=await request('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENROUTER_API_KEY,'Content-Type':'application/json','X-Title':'Franco iPhone'},body:JSON.stringify({model:env.FRANCO_OPENROUTER_MODEL||'openrouter/auto',max_tokens:650,messages:[{role:'system',content:'Sei Franco, assistente personale di lingua italiana. Rispondi in modo utile, chiaro e molto conciso: massimo tre frasi e circa 500 caratteri, salvo richiesta esplicita di approfondimento. Chiudi sempre le frasi; non lasciare testo troncato. Questa versione iPhone offre conversazione e lettura vocale. Non hai accesso al PC, ai file, a strumenti, a notizie in tempo reale o alla domotica. Non dichiarare di aver eseguito azioni.'},...messages]}),signal:AbortSignal.timeout(60000)});
       if(!upstream.ok)return json(502,{error:upstream.status===402?'Credito OpenRouter insufficiente.':'OpenRouter non disponibile (HTTP '+upstream.status+').'});
       const body=await upstream.json();const answer=body.choices?.[0]?.message?.content;
       if(typeof answer!=='string'||!answer.trim())return json(502,{error:'Il modello non ha restituito una risposta. Riprova.'});
-      json(200,{answer});
+      let concise=answer.trim();
+      if(concise.length>650){const cut=concise.slice(0,650);const end=Math.max(cut.lastIndexOf('.'),cut.lastIndexOf('!'),cut.lastIndexOf('?'));concise=(end>180?cut.slice(0,end+1):cut).trim();}
+      json(200,{answer:concise});
     }catch{if(!res.writableEnded)json(502,{error:'Connessione interrotta o tempo scaduto. Riprova.'});}finally{pending--;}
   });
 }
