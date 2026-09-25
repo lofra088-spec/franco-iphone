@@ -20,8 +20,7 @@ export function createApp(env=process.env,request=fetch){
       try{const file=assets[path];const data=await readFile(new URL('./public/'+file,import.meta.url));res.writeHead(200,{'Content-Type':types[file.split('.').pop()]});res.end(data);}catch{json(404,{error:'File non trovato'});}return;
     }
     if(req.method!=='POST'||path!=='/api/chat') return json(404,{error:'Non trovato'});
-    if(!env.OPENROUTER_API_KEY||!env.FRANCO_ACCESS_TOKEN||env.FRANCO_ACCESS_TOKEN.length<24) return json(503,{error:'Configura OpenRouter e una password di almeno 24 caratteri sul server.'});
-    if(!timingSafeEqual(digest(req.headers.authorization||''),digest('Bearer '+env.FRANCO_ACCESS_TOKEN))) return json(401,{error:'Password di accesso non valida.'});
+    if(!env.OPENROUTER_API_KEY) return json(503,{error:'OpenRouter non è configurato sul server.'});
     if(!req.headers['content-type']?.startsWith('application/json')) return json(415,{error:'Formato non valido'});
     while(requests.length&&requests[0]<Date.now()-60000)requests.shift();
     if(pending>=2||requests.length>=20)return json(429,{error:'Troppe richieste. Attendi un minuto.'});

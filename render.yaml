@@ -10,7 +10,5 @@ services:
         value: 22
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: FRANCO_ACCESS_TOKEN
-        generateValue: true
       - key: FRANCO_OPENROUTER_MODEL
         value: openrouter/auto
