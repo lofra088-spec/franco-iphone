@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: franco-iphone
+    runtime: node
+    buildCommand: node --version
+    startCommand: node server.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: FRANCO_ACCESS_TOKEN
+        generateValue: true
+      - key: FRANCO_OPENROUTER_MODEL
+        value: openrouter/auto
