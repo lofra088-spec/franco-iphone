@@ -19,6 +19,13 @@ export function createApp(env=process.env,request=fetch){
     if(req.method==='GET'&&assets[path]){
       try{const file=assets[path];const data=await readFile(new URL('./public/'+file,import.meta.url));res.writeHead(200,{'Content-Type':types[file.split('.').pop()]});res.end(data);}catch{json(404,{error:'File non trovato'});}return;
     }
+    if(req.method==='POST'&&path==='/api/tts'){
+      if(!env.FRANCO_XTTS_URL)return json(503,{error:'XTTS non configurato; uso la voce dell’iPhone.'});
+      let raw='';for await(const chunk of req){raw+=chunk.toString();if(Buffer.byteLength(raw)>12000)return json(413,{error:'Testo vocale troppo lungo'});}
+      let data;try{data=JSON.parse(raw);}catch{return json(400,{error:'Richiesta non valida'});}
+      if(typeof data.text!=='string'||!data.text.trim())return json(400,{error:'Testo vocale mancante'});
+      try{const upstream=await request(env.FRANCO_XTTS_URL.replace(/\/$/,'')+'/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:data.text.slice(0,6000),language:data.language||'it',speaker:data.speaker||env.FRANCO_XTTS_SPEAKER}),signal:AbortSignal.timeout(180000)});if(!upstream.ok)return json(502,{error:'XTTS non disponibile'});res.writeHead(200,{'Content-Type':'audio/wav','Cache-Control':'no-store'});res.end(Buffer.from(await upstream.arrayBuffer()));}catch{json(502,{error:'Connessione XTTS fallita'});}return;
+    }
     if(req.method!=='POST'||path!=='/api/chat') return json(404,{error:'Non trovato'});
     if(!env.OPENROUTER_API_KEY) return json(503,{error:'OpenRouter non è configurato sul server.'});
     if(!req.headers['content-type']?.startsWith('application/json')) return json(415,{error:'Formato non valido'});
