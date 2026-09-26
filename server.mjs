@@ -1,6 +1,5 @@
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {createHash,timingSafeEqual} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 
 const assets={'/':'index.html','/app.js':'app.js','/style.css':'style.css','/manifest.webmanifest':'manifest.webmanifest','/icon.svg':'icon.svg','/apple-touch-icon.png':'apple-touch-icon.png'};
