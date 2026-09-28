@@ -24,6 +24,7 @@ export function createApp(env=process.env,request=fetch){
       let body=Buffer.alloc(0);for await(const chunk of req){body=Buffer.concat([body,chunk]);if(body.length>20*1024*1024)return json(413,{error:'File troppo grande'});}
       try{const upstream=await request(env.FRANCO_REMOTE_URL.replace(/\/$/,'')+'/print',{method:'POST',headers:{Authorization:'Bearer '+env.FRANCO_REMOTE_TOKEN,'Content-Type':req.headers['content-type']||'application/octet-stream','X-Filename':req.headers['x-filename']||'document.pdf'},body,signal:AbortSignal.timeout(30000)});const result=await upstream.text();res.writeHead(upstream.status,{'Content-Type':'application/json'});res.end(result);}catch{json(502,{error:'Stampa remota fallita.'});}return;
     }
+    if(req.method==='POST'&&path==='/api/remote/wake') return json(501,{error:'Wake-on-LAN non configurato sul gateway PC.'});
     if(req.method==='GET'&&assets[path]){
       try{const file=assets[path];const data=await readFile(new URL('./public/'+file,import.meta.url));res.writeHead(200,{'Content-Type':types[file.split('.').pop()]});res.end(data);}catch{json(404,{error:'File non trovato'});}return;
     }
