@@ -28,6 +28,9 @@ export function createApp(env=process.env,request=fetch){
       if(!env.FRANCO_REMOTE_URL||!env.FRANCO_REMOTE_TOKEN)return json(503,{error:'Accesso remoto non configurato.'});
       try{const upstream=await request(env.FRANCO_REMOTE_URL.replace(/\/$/,'')+'/wake',{method:'POST',headers:{Authorization:'Bearer '+env.FRANCO_REMOTE_TOKEN},signal:AbortSignal.timeout(10000)});res.writeHead(upstream.status,{'Content-Type':'application/json'});res.end(await upstream.text());}catch{json(502,{error:'Wake-on-LAN non raggiungibile.'});}return;
     }
+    if(req.method==='POST'&&path==='/api/remote/action'){
+      if(!env.FRANCO_REMOTE_URL||!env.FRANCO_REMOTE_TOKEN)return json(503,{error:'Accesso remoto non configurato.'});let raw='';for await(const c of req){raw+=c;if(raw.length>12000)return json(413,{error:'Richiesta troppo lunga'});}try{const u=await request(env.FRANCO_REMOTE_URL.replace(/\/$/,'')+'/action',{method:'POST',headers:{Authorization:'Bearer '+env.FRANCO_REMOTE_TOKEN,'Content-Type':'application/json'},body:raw,signal:AbortSignal.timeout(20000)});res.writeHead(u.status,{'Content-Type':'application/json'});res.end(await u.text());}catch{json(502,{error:'Azione remota non raggiungibile.'});}return;
+    }
     if(req.method==='GET'&&assets[path]){
       try{const file=assets[path];const data=await readFile(new URL('./public/'+file,import.meta.url));res.writeHead(200,{'Content-Type':types[file.split('.').pop()]});res.end(data);}catch{json(404,{error:'File non trovato'});}return;
     }
